@@ -6,13 +6,16 @@ from telegram.ext import (
     ContextTypes,
     filters
 )
+import os
 
-TOKEN = "ВСТАВЬ_СЮДА_TOKEN_ОТ_BOTFATHER"
-ADMIN_ID = 123456789  # <-- ВСТАВЬ СВОЙ TELEGRAM ID
+# Получаем токен и админ ID из переменных окружения Railway
+TOKEN = os.getenv("TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
+# Для временного хранения данных пользователя
 user_data_temp = {}
 
-# ---------- START ----------
+# ---------- Команда /start ----------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🛒 Добро пожаловать в Караван Ми-Ерима.\n\n"
@@ -21,14 +24,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
     context.user_data["step"] = "nickname"
 
-# ---------- TEXT HANDLER ----------
+# ---------- Обработка сообщений ----------
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     text = update.message.text
 
     step = context.user_data.get("step")
 
-    # 1. Ник
+    # 1️⃣ Ник
     if step == "nickname":
         context.user_data["nickname"] = text
         context.user_data["step"] = "category"
@@ -43,7 +46,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
         )
 
-    # 2. Категория
+    # 2️⃣ Категория
     elif step == "category":
         context.user_data["category"] = text
         context.user_data["step"] = "item"
@@ -53,7 +56,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=ReplyKeyboardRemove()
         )
 
-    # 3. Товар
+    # 3️⃣ Товар
     elif step == "item":
         context.user_data["item"] = text
         context.user_data["step"] = "amount"
@@ -62,7 +65,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Введите количество (например: 3 стака, 2 шалкера, 1 шт):"
         )
 
-    # 4. Количество
+    # 4️⃣ Количество
     elif step == "amount":
         context.user_data["amount"] = text
         context.user_data["step"] = "coords"
@@ -72,7 +75,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "(в любом формате, как принято на сервере):"
         )
 
-    # 5. Координаты
+    # 5️⃣ Координаты
     elif step == "coords":
         context.user_data["coords"] = text
         context.user_data["step"] = "confirm"
@@ -91,7 +94,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text(summary)
 
-    # 6. Подтверждение
+    # 6️⃣ Подтверждение
     elif step == "confirm":
         if text.lower() in ["да", "yes", "y", "✅ да"]:
             order_text = (
@@ -119,13 +122,12 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             context.user_data.clear()
 
-# ---------- MAIN ----------
+# ---------- Основной запуск ----------
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
-
     print("Бот запущен...")
     app.run_polling()
 
